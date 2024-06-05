@@ -2,6 +2,7 @@ extern crate bincode;
 use bincode::{serialize, deserialize};
 use crate::{ProofOfWork, Transaction};
 use serde::{Deserialize, Serialize};
+use sled::IVec;
 
 pub struct Block {
     timestamp: i64,
@@ -41,5 +42,35 @@ impl Block{
         } 
     pub fn get_pre_block_hash(&self) -> String {
         self.pre_block_hash.clone()
-        }    
-}        
+        } 
+    pub fn get_hash(&self) -> &str {
+        self.hash.as_str()
+        } 
+    pub fn get_hash_bytes(&self) -> Vec<u8> {
+        self.hash.as_bytes().to_vec()
+        } 
+    pub fn get_timestamp(&self) -> i64 {
+        self.timestamp
+    }    
+    pub fn get_height(&self) -> usize {
+        self.height
+    } 
+    pub fn hash_transactions(&self) -> Vec<u8> {
+        let mut txhashs = vec![];
+        for transaction in &self.transactions {
+            txhashs.extend(transaction.get_id());
+        }
+        crate::sha256_digest(txhashs.as_slice())
+    } 
+    pub fn generate_genesis_block(transaction: &Transaction) -> Block {
+        let transactions = vec![transaction.clone()];
+        return Block::new_block(String::from("None"), &transactions, 0);
+ }       
+}
+
+impl From<Block> for IVec {
+    fn from(b: Block) -> Self {
+    let bytes = bincode::serialize(&b).unwrap();
+    Self::from(bytes)
+    }
+}
